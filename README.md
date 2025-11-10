@@ -24,10 +24,6 @@ The server provides two tools:
 - **list_standards**: Lists all available standards with their descriptions
 - **get_standards**: Retrieves the full content of specific standards by name
 
-## Logs
-
-By default, the server logs errors only. You can adjust the log level using the `AGENT_STANDARDS_MCP_LOG_LEVEL` environment variable. Available levels are: NONE, DEBUG, INFO, WARN, ERROR. Default location: `~/agent-standards/logs/`
-
 ## Installation
 
 ### Binary Releases
@@ -84,14 +80,14 @@ After these steps, the executable will be permanently allowed to run on your sys
 ### Claude Code
 Add the MCP server using the CLI:
 ```bash
-claude-code mcp add agent-standards --command /path/to/agent-standards-mcp
+claude mcp add -s user --transport stdio agent-standards /path/to/agent-standards-mcp
 ```
 
-### Cursor IDE
+### Cursor IDE, RooCode, KiloCode, etc.
 Add to your Cursor settings:
 ```json
 {
-  "mcp.servers": {
+  "mcpServers": {
     "agent-standards": {
       "command": "/path/to/agent-standards-mcp"
     }
@@ -133,6 +129,10 @@ LLM Agent will be able to access these standards via the MCP server:
 
 Some LLMs may require additional rules to properly utilize the standards. You may want to add extra rules in your AGENTS.md/CLAUDE.md etc.
 Be careful to prompt injection prevention, because some LLMs (like GPT-5) may stop responding if they decide the rules are unsafe.
+
+## Logs
+
+By default, the server logs errors only. You can adjust the log level using the `AGENT_STANDARDS_MCP_LOG_LEVEL` environment variable. Available levels are: NONE, DEBUG, INFO, WARN, ERROR. Default location: `~/agent-standards/logs/`
 
 ## Development
 
