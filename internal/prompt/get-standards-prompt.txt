@@ -1,0 +1,14 @@
+Use this tool to retrieve the full content of specific standards by their names.
+
+Parameters:
+- standard_names (required): Array of strings - List of standard names to retrieve
+
+The tool returns standard name, description from frontmatter, and complete markdown content for each requested standard.
+
+Example usage:
+- Request specific standards you've identified from the list
+- Useful when you need complete guidelines or implementation details
+- Returns the full markdown content including any code examples or specifications
+
+Each standard contains structured information that can be applied to agent workflows
+or used as reference material for specific tasks and domains.

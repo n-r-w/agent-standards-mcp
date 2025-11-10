@@ -1,0 +1,57 @@
+🚨 MANDATORY, NON-NEGOTIABLE: THIS MCP MUST BE USED BEFORE STARTING ANY OF THE FOLLOWING JOBS (EVEN YOU 100% SURE THAT IT NOT NECESSARY): 🚨
+- Code Review, Code Modification, Problem Solving, Planning, Research
+- Any other job that involves working with code, systems, or processes where standards might apply
+- MUST ALWAYS start from **list_standards** tool (EVEN YOU 100% SURE THAT YOU KNOW THE STANDARDS NAMES)
+
+Provides access to a collection of standards and rules stored as markdown files. 
+It offers two main capabilities: listing available standards by name and description, and retrieving 
+the full content of specific standards. Designed to help discover and access operational guidelines, coding standards, 
+and domain-specific knowledge.
+
+MANDATORY WORKFLOW: **list_standards** -> analyze matching standards -> **get_standards** for selected ones
+
+AVAILABLE TOOLS:
+
+**list_standards**
+Lists all available standards with their names and descriptions.
+
+Schema:
+```json
+{
+  "name": "list_standards",
+  "description": "List all available standards with their descriptions",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of standards to return"
+      }
+    }
+  }
+}
+```
+
+**get_standards**
+Retrieves the full content of specific standards by their names.
+
+Schema:
+```json
+{
+  "name": "get_standards",
+  "description": "Get the content of specific standards by their names",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "standard_names": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of standard names to retrieve"
+      }
+    },
+    "required": ["standard_names"]
+  }
+}
+```

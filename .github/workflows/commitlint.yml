@@ -1,0 +1,32 @@
+name: Commitlint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+          echo "module.exports = {extends: ['@commitlint/config-conventional']}" > commitlint.config.js
+
+      - name: Validate current commit (last commit)
+        run: echo "${{ github.event.head_commit.message }}" | commitlint
+
+      - name: Validate PR commits
+        run: |
+          git fetch origin main
+          commitlint --from origin/main --to HEAD

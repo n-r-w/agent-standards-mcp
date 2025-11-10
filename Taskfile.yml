@@ -1,0 +1,85 @@
+version: "3"
+
+vars:
+  MAIN_CMD: "./cmd/agent-standards-mcp"
+
+tasks:
+  default:
+    desc: Shows available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the application
+    cmds:
+      - go build -ldflags "-X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev) -X main.commit=$(git rev-parse HEAD 2>/dev/null || echo unknown) -X main.date=$(date -u '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown) -X main.builtBy=local" -o agent-standards-mcp {{.MAIN_CMD}}
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./... -v
+
+  test-coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test ./... -coverprofile=coverage.out -v
+      - go tool cover -html=coverage.out -o coverage.html
+
+  lint:
+    desc: Run linter
+    cmds:
+      - golangci-lint run
+
+  lint-fix:
+    desc: Run linter with auto-fix
+    cmds:
+      - golangci-lint run --fix
+
+  format:
+    desc: Format Go code
+    cmds:
+      - goimports -w ./...
+      - gofmt -s -w ./...
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f coverage.out coverage.html agent-standards-mcp
+      - go clean -cache
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run -ldflags "-X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev) -X main.commit=$(git rev-parse HEAD 2>/dev/null || echo unknown) -X main.date=$(date -u '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown) -X main.builtBy=local" {{.MAIN_CMD}}
+
+  run-debug:
+    desc: Run with DEBUG log level
+    env:
+      AGENT_STANDARDS_MCP_LOG_LEVEL: DEBUG
+    cmds:
+      - go run -ldflags "-X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev) -X main.commit=$(git rev-parse HEAD 2>/dev/null || echo unknown) -X main.date=$(date -u '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown) -X main.builtBy=local" {{.MAIN_CMD}}
+
+  deps:
+    desc: Update dependencies
+    cmds:
+      - go mod tidy
+
+  generate:
+    desc: Generate code
+    cmds:
+      - go generate ./...
+
+  install-tools:
+    desc: Install development tools
+    cmds:
+      - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+      - go install golang.org/x/tools/cmd/goimports@latest
+      - go install github.com/golang/mock/mockgen@latest
+
+  ci:
+    desc: Run CI pipeline
+    cmds:
+      - task: deps
+      - task: lint
+      - task: test-coverage
+      - task: build
