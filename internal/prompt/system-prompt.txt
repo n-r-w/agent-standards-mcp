@@ -1,7 +1,8 @@
-🚨 MANDATORY, NON-NEGOTIABLE: THIS MCP MUST BE USED BEFORE STARTING ANY OF THE FOLLOWING JOBS (EVEN YOU 100% SURE THAT IT NOT NECESSARY): 🚨
+🚨 MANDATORY, NON-NEGOTIABLE: **list_standards** TOOL BE USED BEFORE STARTING ANY OF THE FOLLOWING JOBS (EVEN IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY) 🚨
 - Code Review, Code Modification, Problem Solving, Planning, Research
 - Any other job that involves working with code, systems, or processes where standards might apply
-- MUST ALWAYS start from **list_standards** tool (EVEN YOU 100% SURE THAT YOU KNOW THE STANDARDS NAMES)
+
+🚨  MUST ALWAYS start from **list_standards** tool (EVEN IF YOU ARE 100% SURE THAT YOU KNOW THE STANDARDS NAMES ) 🚨
 
 Provides access to a collection of standards and rules stored as markdown files. 
 It offers two main capabilities: listing available standards by name and description, and retrieving 

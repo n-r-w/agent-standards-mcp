@@ -106,19 +106,16 @@ func NewStructuredLogger(cfg *config.Config) (*StructuredLogger, error) {
 
 // Debug logs a debug message with structured data.
 func (s *StructuredLogger) Debug(msg string, args ...any) {
-	// Stub implementation - will be implemented later
 	s.logger.Debug(msg, args...)
 }
 
 // Info logs an info message with structured data.
 func (s *StructuredLogger) Info(msg string, args ...any) {
-	// Stub implementation - will be implemented later
 	s.logger.Info(msg, args...)
 }
 
 // Warn logs a warning message with structured data.
 func (s *StructuredLogger) Warn(msg string, args ...any) {
-	// Stub implementation - will be implemented later
 	s.logger.Warn(msg, args...)
 }
 

@@ -21,6 +21,38 @@ Download the latest release from [GitHub Releases](https://github.com/n-r-w/agen
 go build -o agent-standards-mcp ./cmd/agent-standards-mcp
 ```
 
+or use Task:
+
+```bash
+task build
+```
+
+### macOS Installation Notes
+
+macOS may block execution of downloaded binaries by default due to security settings. To allow the executable to run:
+
+1. **First execution attempt**: Run the executable from terminal
+   ```bash
+   ./agent-standards-mcp
+   ```
+   This will show a security warning.
+
+2. **Allow execution via System Settings**:
+   - Open **System Settings** → **Privacy & Security** → **Security**
+   - Find the message about the blocked executable
+   - Click **"Allow Anyway"**
+
+3. **Second execution**: Run the executable again
+   ```bash
+   ./agent-standards-mcp
+   ```
+
+4. **Confirm execution**: A dialog will appear asking for confirmation
+   - Click **"Open"** and enter your password if prompted
+   - The executable will now be allowed to run
+
+After these steps, the executable will be permanently allowed to run on your system.
+
 ## Usage
 
 The server provides two tools:

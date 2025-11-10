@@ -36,7 +36,6 @@ func NewAudit(cfg *config.Config) (*Audit, error) {
 
 // LogClientRequest logs a client request with structured data.
 func (a *Audit) LogClientRequest(clientID string, method string, params any) {
-	// Stub implementation - will be implemented later
 	a.logger.Info("client_request",
 		"client_id", clientID,
 		"method", method,
@@ -46,7 +45,6 @@ func (a *Audit) LogClientRequest(clientID string, method string, params any) {
 
 // LogClientResponse logs a client response with structured data.
 func (a *Audit) LogClientResponse(clientID string, result any, err error) {
-	// Stub implementation - will be implemented later
 	if err != nil {
 		a.logger.Error("client_response",
 			"client_id", clientID,
