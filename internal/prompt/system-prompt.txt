@@ -1,19 +1,19 @@
-🚨 MANDATORY, NON-NEGOTIABLE: **list_standards** TOOL BE USED BEFORE STARTING ANY OF THE FOLLOWING JOBS (EVEN IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY) 🚨
-- Code Review, Code Modification, Problem Solving, Planning, Research
-- Any other job that involves working with code, systems, or processes where standards might apply
+🚨 MUST USE STANDARDS_RETRIEVAL_WORKFLOW FOR ALL TASKS INCLUDING INTERNAL REFACTORING (EVEN IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY) 🚨
+🚨 STANDARDS CONTAIN CODING, WORKFLOWS, BUSINESS DOMAINS, TESTING, ARCHITECTURE, AND MORE 🚨
 
-🚨  MUST ALWAYS start from **list_standards** tool (EVEN IF YOU ARE 100% SURE THAT YOU KNOW THE STANDARDS NAMES ) 🚨
+**STANDARDS_RETRIEVAL_WORKFLOW:**
+1) Identify task type and scope
+2) Determine relevant standards categories (coding, workflows, business analysis, testing, architecture, etc.)
+3) MUST use `list_standards` -> `get_standards` for ALL tasks
+4) Apply retrieved standards to task execution
 
-Provides access to a collection of standards and rules stored as markdown files. 
-It offers two main capabilities: listing available standards by name and description, and retrieving 
-the full content of specific standards. Designed to help discover and access operational guidelines, coding standards, 
-and domain-specific knowledge.
+**CAPABILITIES:**
+Provides comprehensive standards covering coding patterns, workflows, business domain knowledge, testing strategies, architecture guidelines, and other domain-specific rules.
+MUST be used for ALL tasks including internal refactoring, planning, implementation, and analysis.
 
-MANDATORY WORKFLOW: **list_standards** -> analyze matching standards -> **get_standards** for selected ones
+**AVAILABLE TOOLS:**
 
-AVAILABLE TOOLS:
-
-**list_standards**
+- list_standards
 Lists all available standards with their names and descriptions.
 
 Schema:
@@ -33,8 +33,9 @@ Schema:
 }
 ```
 
-**get_standards**
+- get_standards
 Retrieves the full content of specific standards by their names.
+RECOMMENDED to load all relevant standards via single call.
 
 Schema:
 ```json

@@ -9,6 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/n-r-w/agent-standards-mcp/internal/config"
 	"github.com/n-r-w/agent-standards-mcp/internal/domain"
+	"github.com/n-r-w/agent-standards-mcp/internal/prompt"
 	"github.com/n-r-w/agent-standards-mcp/internal/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -142,7 +143,7 @@ func TestMCP_handleListStandards_Success(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := "test-standard-1: Test standard 1\ntest-standard-2: Test standard 2"
+	expectedText := prompt.LoadRelevantStandardsPrompt() + "\ntest-standard-1: Test standard 1\ntest-standard-2: Test standard 2"
 	assert.Equal(t, expectedText, textContent.Text)
 }
 
@@ -265,7 +266,7 @@ func TestMCP_handleGetStandards_Success(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := "# MUST FOLLOW STANDARDS BELOW\n\n## test-standard-1: Test standard 1\n```md\nContent 1\n```\n\n------\n\n## test-standard-2: Test standard 2\n```md\nContent 2\n```"
+	expectedText := prompt.FollowStandardsPrompt() + "\n\n## test-standard-1: Test standard 1\n```md\nContent 1\n```\n\n------\n\n## test-standard-2: Test standard 2\n```md\nContent 2\n```"
 	assert.Equal(t, expectedText, textContent.Text)
 }
 
@@ -491,7 +492,7 @@ func TestMCP_handleListStandards_SpecialCharacters(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := "standard-with-特殊字符: Standard with special characters: ñáéíóú\nstandard-with-emoji: Standard with emoji: 🚀🔧"
+	expectedText := prompt.LoadRelevantStandardsPrompt() + "\nstandard-with-特殊字符: Standard with special characters: ñáéíóú\nstandard-with-emoji: Standard with emoji: 🚀🔧"
 	assert.Equal(t, expectedText, textContent.Text)
 }
 
@@ -538,7 +539,7 @@ func TestMCP_handleGetStandards_LargeContent(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := "# MUST FOLLOW STANDARDS BELOW\n\n## large-standard: Large standard\n```md\n" + largeContent + "\n```"
+	expectedText := prompt.FollowStandardsPrompt() + "\n\n## large-standard: Large standard\n```md\n" + largeContent + "\n```"
 	assert.Equal(t, expectedText, textContent.Text)
 }
 

@@ -106,12 +106,19 @@ func formatStandardInfos(infos []domain.StandardInfo) string {
 	}
 
 	var builder strings.Builder
+
+	// add prefix
+	if len(infos) > 0 {
+		builder.WriteString(prompt.LoadRelevantStandardsPrompt() + "\n")
+	}
+
 	for i, info := range infos {
 		if i > 0 {
 			builder.WriteString("\n")
 		}
 		builder.WriteString(formatStandardInfo(info))
 	}
+
 	return builder.String()
 }
 
@@ -123,7 +130,7 @@ func formatStandards(standards []domain.Standard) string {
 
 	var builder strings.Builder
 
-	builder.WriteString("# MUST FOLLOW STANDARDS BELOW\n\n")
+	builder.WriteString(prompt.FollowStandardsPrompt() + "\n\n")
 
 	for i, standard := range standards {
 		if i > 0 {
