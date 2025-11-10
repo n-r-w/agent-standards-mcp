@@ -2,6 +2,27 @@
 
 A Model Context Protocol (MCP) server that provides agents with access to standards and rules. It enables agents to list available standards and retrieve their content programmatically.
 
+## Why use this MCP server?
+Different rules are needed for different cases. Some for coding (and different ones for different languages), others for working with databases, third for working with APIs, etc. If all rules are loaded into the context at once (for example, placed in AGENTS.md), this will lead to:
+- Increased cost of LLM requests (more tokens - higher price)
+- Slower response (more tokens - longer request processing)
+- Loss of LLM focus (too much information - LLM may get confused about what's important and what's not)
+
+Everyone solves this problem differently. For example:
+- Claude Code offers a skills mechanism, but unfortunately, it cannot be controlled, because Claude itself decides which skill to use. It is impossible to set rules for when to use one or another skill manually through CLAUDE.md
+- In Github Copilot, you can create different sets of rules and specify for which file extensions they should apply. But this will only work at the moment of calling tools that change the content of such files. I.e., at the planning and decision-making stage, the LLM will not have access to these rules and will most likely make incorrect decisions.
+
+This MCP server solves these problems:
+- You can explicitly specify to the agent when to load standards by writing this in the rules or commands
+- The rules catalog is centralized. There is no binding to the implementation of a specific agent/IDE - can be used with any LLM agent that supports MCP
+
+## Available Tools
+
+The server provides two tools:
+
+- **list_standards**: Lists all available standards with their descriptions
+- **get_standards**: Retrieves the full content of specific standards by name
+
 ## Installation
 
 ### Binary Releases
@@ -53,13 +74,6 @@ macOS may block execution of downloaded binaries by default due to security sett
 
 After these steps, the executable will be permanently allowed to run on your system.
 
-## Usage
-
-The server provides two tools:
-
-- **list_standards**: Lists all available standards with their descriptions
-- **get_standards**: Retrieves the full content of specific standards by name
-
 ## IDE Integration
 
 ### Claude Code
@@ -80,7 +94,7 @@ Add to your Cursor settings:
 }
 ```
 
-## Configuration
+### Configuration
 
 Configure the server with environment variables:
 
@@ -88,6 +102,32 @@ Configure the server with environment variables:
 - `AGENT_STANDARDS_MCP_FOLDER`: Standards folder path (default: "~/agent-standards")
 - `AGENT_STANDARDS_MCP_MAX_STANDARDS`: Maximum number of standards to load (default: 100)
 - `AGENT_STANDARDS_MCP_MAX_STANDARD_SIZE`: Maximum size of a standard file in bytes (default: 10240)
+
+## Usage
+
+### Standards Management
+
+Place your standard markdown files in the specified standards folder (default: `~/agent-standards/standards`)
+
+Use the following format:
+
+```markdown
+---
+description: {A brief description of the standard}
+---
+
+## {Standard Title. Start with ##}
+{Full content of the standard goes here. Follow ## headings for sections.}
+```
+
+LLM Agent will be able to access these standards via the MCP server:
+- **List Standards**: Use the `list_standards` tool to get a list of available standard names with descriptions.
+- **Get Standard Content**: Use the `get_standards` tool to retrieve the full content of specific standards by name.
+
+### Additional Rules
+
+Some LLMs may require additional rules to properly utilize the standards. You may want to add extra rules in your AGENTS.md/CLAUDE.md etc.
+Be careful to prompt injection prevention, because some LLMs (like GPT-5) may stop responding if they decide the rules are unsafe.
 
 ## Development
 
