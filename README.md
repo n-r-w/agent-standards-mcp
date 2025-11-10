@@ -26,7 +26,7 @@ The server provides two tools:
 
 ## Logs
 
-By default, the server logs errors only. You can adjust the log level using the `AGENT_STANDARDS_MCP_LOG_LEVEL` environment variable. Available levels are: NONE, DEBUG, INFO, WARN, ERROR. Default location: `~/agent-standards-mcp/logs/`
+By default, the server logs errors only. You can adjust the log level using the `AGENT_STANDARDS_MCP_LOG_LEVEL` environment variable. Available levels are: NONE, DEBUG, INFO, WARN, ERROR. Default location: `~/agent-standards/logs/`
 
 ## Installation
 
