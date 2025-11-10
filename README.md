@@ -59,9 +59,9 @@ macOS may block execution of downloaded binaries by default due to security sett
 
 1. **First execution attempt**: Run the executable from terminal
    ```bash
-   ./agent-standards-mcp
+   ./agent-standards-mcp --version
    ```
-   This will show a security warning.
+   This will show a security warning. Press **Done**.
 
 2. **Allow execution via System Settings**:
    - Open **System Settings** → **Privacy & Security** → **Security**
@@ -70,11 +70,11 @@ macOS may block execution of downloaded binaries by default due to security sett
 
 3. **Second execution**: Run the executable again
    ```bash
-   ./agent-standards-mcp
+   ./agent-standards-mcp --version
    ```
 
 4. **Confirm execution**: A dialog will appear asking for confirmation
-   - Click **"Open"** and enter your password if prompted
+   - Click **"Open Anyway"** and enter your password if prompted
    - The executable will now be allowed to run
 
 After these steps, the executable will be permanently allowed to run on your system.
