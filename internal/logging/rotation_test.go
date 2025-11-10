@@ -29,11 +29,11 @@ func TestLogRotator_Configuration(t *testing.T) {
 	// Verify lumberjack configuration
 	lj := rotator.lumberjack
 	assert.Equal(t, filepath.Join(tempDir, "logs", "agent-standards-mcp.log"), lj.Filename)
-	assert.Equal(t, maxLogFileSize, lj.MaxSize)    // 100MB
-	assert.Equal(t, maxLogFiles, lj.MaxBackups)    // 7 files
-	assert.Equal(t, maxLogAge, lj.MaxAge)          // 7 days
-	assert.True(t, lj.Compress)                    // compression enabled
-	assert.True(t, lj.LocalTime)                   // local time enabled
+	assert.Equal(t, maxLogFileSize, lj.MaxSize) // 100MB
+	assert.Equal(t, maxLogFiles, lj.MaxBackups) // 7 files
+	assert.Equal(t, maxLogAge, lj.MaxAge)       // 7 days
+	assert.True(t, lj.Compress)                 // compression enabled
+	assert.True(t, lj.LocalTime)                // local time enabled
 
 	// Test closing rotator
 	err = rotator.Close()
@@ -51,7 +51,11 @@ func TestLogRotator_RotationBehavior(t *testing.T) {
 
 	rotator, err := NewLogRotator(cfg)
 	require.NoError(t, err)
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Create a small log file to test basic functionality
 	writer := rotator.Writer()
@@ -92,7 +96,11 @@ func TestLogRotator_DirectoryCreation(t *testing.T) {
 
 	rotator, err := NewLogRotator(cfg)
 	require.NoError(t, err)
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Verify directory was created
 	fileInfo, err := os.Stat(logDir)
@@ -107,7 +115,7 @@ func TestLogRotator_DirectoryCreation(t *testing.T) {
 
 func TestLogRotator_InvalidConfig(t *testing.T) {
 	rotator, err := NewLogRotator(nil)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, rotator)
 	assert.Contains(t, err.Error(), "configuration cannot be nil")
 }
@@ -123,7 +131,11 @@ func TestLogRotator_FilePermissions(t *testing.T) {
 
 	rotator, err := NewLogRotator(cfg)
 	require.NoError(t, err)
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Write to log file to create it
 	writer := rotator.Writer()
@@ -136,7 +148,7 @@ func TestLogRotator_FilePermissions(t *testing.T) {
 	require.NoError(t, err)
 
 	// File should be readable/writable by owner (default file permissions)
-	assert.True(t, info.Mode().Perm()&0600 != 0)
+	assert.NotEqual(t, os.FileMode(0), info.Mode().Perm()&0600)
 }
 
 func TestLogRotator_ConcurrentAccess(t *testing.T) {
@@ -150,7 +162,11 @@ func TestLogRotator_ConcurrentAccess(t *testing.T) {
 
 	rotator, err := NewLogRotator(cfg)
 	require.NoError(t, err)
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Test concurrent writes
 	writer := rotator.Writer()

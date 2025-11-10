@@ -24,7 +24,7 @@ This file provides guidance to agents when working with code in this repository.
 
 - Error handling: MUST use structured logging with slog, not fmt.Errorf for user-facing errors
 - Interface-based design: All major components implement interfaces for testability
-- Zero linting errors allowed before code finalization
+- MUST ALWAYS run linter and fix ALL issues before finalizing code
 
 ## Testing Architecture
 

@@ -63,7 +63,7 @@ func NewStructuredLogger(cfg *config.Config) (*StructuredLogger, error) {
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level:     slogLevel,
 		AddSource: true,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			// Only replace source attribute, preserve others for proper structured logging
 			if a.Key == "source" {
 				return slog.String("source", "agent-standards-mcp")
@@ -93,7 +93,7 @@ func NewStructuredLogger(cfg *config.Config) (*StructuredLogger, error) {
 		handler = slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
 			Level:     slogLevel,
 			AddSource: true,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 				// Only replace source attribute, preserve others for proper structured logging
 				if a.Key == "source" {
 					return slog.String("source", "agent-standards-mcp")

@@ -17,7 +17,7 @@ import (
 // TestLogRotation_Integration tests actual log rotation with small file sizes
 func TestLogRotation_Integration(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create a custom rotator with small file size for testing
 	logDir := filepath.Join(tempDir, "logs")
 	if err := os.MkdirAll(logDir, dirPermissions); err != nil {
@@ -27,17 +27,21 @@ func TestLogRotation_Integration(t *testing.T) {
 	logFile := filepath.Join(logDir, "agent-standards-mcp.log")
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   logFile,
-		MaxSize:    1,             // 1MB for testing
-		MaxBackups: 3,             // Keep 3 backups
-		MaxAge:     1,             // 1 day for testing
-		Compress:   true,          // Compress old files
-		LocalTime:  true,          // Use local time
+		MaxSize:    1,    // 1MB for testing
+		MaxBackups: 3,    // Keep 3 backups
+		MaxAge:     1,    // 1 day for testing
+		Compress:   true, // Compress old files
+		LocalTime:  true, // Use local time
 	}
 
 	rotator := &LogRotator{
 		lumberjack: lumberjackLogger,
 	}
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Write enough data to trigger rotation
 	writer := rotator.Writer()
@@ -51,7 +55,7 @@ func TestLogRotation_Integration(t *testing.T) {
 		logEntry := fmt.Sprintf("Log entry %d: %s", i, message)
 		_, err := writer.Write([]byte(logEntry))
 		require.NoError(t, err)
-		
+
 		// Small delay to ensure proper file handling
 		time.Sleep(1 * time.Millisecond)
 	}
@@ -63,31 +67,31 @@ func TestLogRotation_Integration(t *testing.T) {
 	// Check if rotation occurred by looking for backup files
 	files, err := filepath.Glob(filepath.Join(logDir, "agent-standards-mcp.log*"))
 	require.NoError(t, err)
-	
+
 	t.Logf("Found log files: %v", files)
-	
+
 	// Should have at least the main log file
-	assert.True(t, len(files) >= 1, "Should have at least the main log file")
-	
+	assert.GreaterOrEqual(t, len(files), 1, "Should have at least the main log file")
+
 	// Verify main log file exists
 	_, err = os.Stat(logFile)
 	require.NoError(t, err)
-	
+
 	// Check file sizes are reasonable
 	for _, file := range files {
 		info, err := os.Stat(file)
 		require.NoError(t, err)
 		t.Logf("File: %s, Size: %d bytes", filepath.Base(file), info.Size())
-		
+
 		// Files should not be empty
-		assert.True(t, info.Size() > 0, "Log file should not be empty: %s", file)
+		assert.Positive(t, info.Size(), "Log file should not be empty: %s", file)
 	}
 }
 
 // TestLogRotation_Deletion tests old log file deletion based on age and count
 func TestLogRotation_Deletion(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create a custom rotator with very small limits for testing
 	logDir := filepath.Join(tempDir, "logs")
 	if err := os.MkdirAll(logDir, dirPermissions); err != nil {
@@ -97,17 +101,21 @@ func TestLogRotation_Deletion(t *testing.T) {
 	logFile := filepath.Join(logDir, "agent-standards-mcp.log")
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   logFile,
-		MaxSize:    1,             // 1MB for testing
-		MaxBackups: 2,             // Keep only 2 backups
-		MaxAge:     0,             // No age-based deletion for this test
-		Compress:   true,          // Compress old files
-		LocalTime:  true,          // Use local time
+		MaxSize:    1,    // 1MB for testing
+		MaxBackups: 2,    // Keep only 2 backups
+		MaxAge:     0,    // No age-based deletion for this test
+		Compress:   true, // Compress old files
+		LocalTime:  true, // Use local time
 	}
 
 	rotator := &LogRotator{
 		lumberjack: lumberjackLogger,
 	}
-	defer rotator.Close()
+	defer func() {
+		if err := rotator.Close(); err != nil {
+			t.Logf("Error closing rotator: %v", err)
+		}
+	}()
 
 	// Write data to create multiple backup files
 	writer := rotator.Writer()
@@ -122,19 +130,19 @@ func TestLogRotation_Deletion(t *testing.T) {
 			_, err := writer.Write([]byte(logEntry))
 			require.NoError(t, err)
 		}
-		
+
 		// Force rotation by creating a new logger
 		err := rotator.Close()
 		require.NoError(t, err)
-		
+
 		// Create new logger for next rotation
 		lumberjackLogger = &lumberjack.Logger{
 			Filename:   logFile,
-			MaxSize:    1,             // 1MB for testing
-			MaxBackups: 2,             // Keep only 2 backups
-			MaxAge:     0,             // No age-based deletion
-			Compress:   true,          // Compress old files
-			LocalTime:  true,          // Use local time
+			MaxSize:    1,    // 1MB for testing
+			MaxBackups: 2,    // Keep only 2 backups
+			MaxAge:     0,    // No age-based deletion
+			Compress:   true, // Compress old files
+			LocalTime:  true, // Use local time
 		}
 		rotator = &LogRotator{
 			lumberjack: lumberjackLogger,
@@ -148,17 +156,17 @@ func TestLogRotation_Deletion(t *testing.T) {
 	// Check final state of log files
 	files, err := filepath.Glob(filepath.Join(logDir, "agent-standards-mcp.log*"))
 	require.NoError(t, err)
-	
+
 	t.Logf("Final log files after rotation test: %v", files)
-	
+
 	// Should have at most 3 files (main + 2 backups)
-	assert.True(t, len(files) <= 3, "Should have at most 3 files (main + 2 backups), got %d", len(files))
-	
+	assert.LessOrEqual(t, len(files), 3, "Should have at most 3 files (main + 2 backups), got %d", len(files))
+
 	// Verify all existing files have content
 	for _, file := range files {
 		info, err := os.Stat(file)
 		require.NoError(t, err)
-		assert.True(t, info.Size() > 0, "Log file should not be empty: %s", file)
+		assert.Positive(t, info.Size(), "Log file should not be empty: %s", file)
 	}
 }
 
