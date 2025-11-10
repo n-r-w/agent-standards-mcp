@@ -3,6 +3,7 @@
 A Model Context Protocol (MCP) server that provides agents with access to standards and rules. It enables agents to list available standards and retrieve their content programmatically.
 
 ## Why use this MCP server?
+
 Different rules are needed for different cases. Some for coding (and different ones for different languages), others for working with databases, third for working with APIs, etc. If all rules are loaded into the context at once (for example, placed in AGENTS.md), this will lead to:
 - Increased cost of LLM requests (more tokens - higher price)
 - Slower response (more tokens - longer request processing)
@@ -22,6 +23,10 @@ The server provides two tools:
 
 - **list_standards**: Lists all available standards with their descriptions
 - **get_standards**: Retrieves the full content of specific standards by name
+
+## Logs
+
+By default, the server logs errors only. You can adjust the log level using the `AGENT_STANDARDS_MCP_LOG_LEVEL` environment variable. Available levels are: NONE, DEBUG, INFO, WARN, ERROR. Default location: `~/agent-standards-mcp/logs/`
 
 ## Installation
 
