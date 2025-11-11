@@ -99,6 +99,19 @@ Add to your Cursor settings:
 
 #### Set system prompt
 
+**Option 1: Manual inclusion (recommended)**
+
+Add to your workflow (subagents, commands, etc.) the following instruction to enforce the use of the standards retrieval workflow:
+
+OpenCode example:
+```markdown
+MUST use `agent-standards_list_standards` -> `agent-standards_get_standards` tools to get relevant standards for the project
+```
+
+Tool names can be varied depending on which agent you are using. Ask your agent for the correct tool names if unsure.
+
+**Option 2: Automatic inclusion (can be bypassed by the LLM)**
+
 Add to your AGENTS.md/CLAUDE.md/other agent rules file the following mandatory rules to enforce the use of the standards retrieval workflow:
 
 ```markdown
@@ -107,6 +120,12 @@ Add to your AGENTS.md/CLAUDE.md/other agent rules file the following mandatory r
 2. MUST FOLLOW STANDARDS_RETRIEVAL_WORKFLOW EVEN:
     * IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY
     * FOR SMALLEST TASKS, REGARDLESS OF PERCEIVED SIMPLICITY OR OBVIOUSNESS
+
+**HIERARCHICAL RULE ENFORCEMENT**
+🚨🚨🚨 CRITICAL RULE VIOLATION 🚨🚨🚨
+- FIRST MANDATED ACTION: STANDARDS_RETRIEVAL_WORKFLOW
+- CONSEQUENCE: Task failure, no responses allowed until workflow completed
+- VERIFICATION: Must explicitly state each completed step before proceeding
 
 **MANDATORY STANDARDS_RETRIEVAL_WORKFLOW:**
 1. MUST ANNOUNCE "🧠 Using standards retrieval workflow"

@@ -1,3 +1,4 @@
 Allow retrieval of the full content of specific standards by their names.
 Each standard contains structured information that can be applied to your workflows
 or used as reference material for specific tasks and domains.
+The names of the standards MUST be previously retrieved by the list_standards tool.
