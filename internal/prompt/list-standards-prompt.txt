@@ -1,2 +1,2 @@
-This tool helps you discover available standards by providing a list of all standard names and their descriptions. 
-Help you decide which ones to retrieve in full.
+Discover available standards by providing a list of all standard names and their descriptions. 
+This will help you decide which ones to retrieve in full.

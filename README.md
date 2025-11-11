@@ -97,7 +97,40 @@ Add to your Cursor settings:
 
 ### Configuration
 
-Configure the server with environment variables:
+#### Set system prompt
+
+Add to your AGENTS.md/CLAUDE.md/other agent rules file the following mandatory rules to enforce the use of the standards retrieval workflow:
+
+```markdown
+🚨🚨🚨 **FIRST MANDATED ACTION BEFORE ANY WORKSPACE EXPLORATION:** 🚨🚨🚨
+1. FOLLOW STANDARDS_RETRIEVAL_WORKFLOW
+2. MUST FOLLOW STANDARDS_RETRIEVAL_WORKFLOW EVEN:
+    * IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY
+    * FOR SMALLEST TASKS, REGARDLESS OF PERCEIVED SIMPLICITY OR OBVIOUSNESS
+
+**MANDATORY STANDARDS_RETRIEVAL_WORKFLOW:**
+1. MUST ANNOUNCE "🧠 Using standards retrieval workflow"
+2. Quickly explore workspace to understand project type
+3. Identify task type and scope
+4. Determine relevant standards categories (coding, workflows, business analysis, testing, architecture, etc.)
+5. Get list of available standards
+6. Select the most relevant standards for your task
+7. MUST announce in format:
+    ```
+    Relevant Standards for {task type}:
+    - {standard 1}: {why it's relevant. E.g., "Covers best practices for X"}
+    ...
+    ```
+8. Get selected standards content
+9. Apply retrieved standards to your task execution
+10. Continue your primary task workflow using the standards as guidance
+```
+
+* Some LLMs may need to modify the wording to better fit their understanding.
+* Why these rules are not included in the MCP server prompt? Because some agents (like RooCode/KiloCode) start trying to use tools `list_standards` and `get_standards` not like MCP tools, but as regular system tools, which leads to tool call errors.
+* Why to ask LLM to say something? This way we make the LLM take the first step in the right direction and not forget about it later. This significantly reduces the probability of ignoring the rules.
+
+#### Configure the server with environment variables (optional)
 
 - `AGENT_STANDARDS_MCP_LOG_LEVEL`: Log level (NONE/DEBUG/INFO/WARN/ERROR, default: "ERROR")
 - `AGENT_STANDARDS_MCP_FOLDER`: Standards folder path (default: "~/agent-standards")
