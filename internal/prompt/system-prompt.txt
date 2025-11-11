@@ -1,59 +1,14 @@
-🚨 MUST USE STANDARDS_RETRIEVAL_WORKFLOW FOR ALL TASKS INCLUDING INTERNAL REFACTORING (EVEN IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY) 🚨
-🚨 STANDARDS CONTAIN CODING, WORKFLOWS, BUSINESS DOMAINS, TESTING, ARCHITECTURE, AND MORE 🚨
+`Agent-standards` tools give you access to comprehensive standards that cover: best practices, workflows, business domain knowledge, testing strategies, architecture guidelines, and other relevant areas.
+MUST be used for ALL tasks including internal refactoring, planning, implementation, analysis, testing, etc.
 
-**STANDARDS_RETRIEVAL_WORKFLOW:**
-1) Identify task type and scope
-2) Determine relevant standards categories (coding, workflows, business analysis, testing, architecture, etc.)
-3) MUST use `list_standards` -> `get_standards` for ALL tasks
-4) Apply retrieved standards to task execution
+**MANDATORY STANDARDS_RETRIEVAL_WORKFLOW:**
+1. Identify task type and scope
+2. Determine relevant standards categories (coding, workflows, business analysis, testing, architecture, etc.)
+3. Use `list_standards` tool to retrieve available standards
+4. Select the most relevant standards for your task
+5. Use `get_standards` tool to retrieve selected standards content
+6. Apply retrieved standards to your task execution
 
-**CAPABILITIES:**
-Provides comprehensive standards covering coding patterns, workflows, business domain knowledge, testing strategies, architecture guidelines, and other domain-specific rules.
-MUST be used for ALL tasks including internal refactoring, planning, implementation, and analysis.
-
-**AVAILABLE TOOLS:**
-
-- list_standards
-Lists all available standards with their names and descriptions.
-
-Schema:
-```json
-{
-  "name": "list_standards",
-  "description": "List all available standards with their descriptions",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "limit": {
-        "type": "integer",
-        "description": "Maximum number of standards to return"
-      }
-    }
-  }
-}
-```
-
-- get_standards
-Retrieves the full content of specific standards by their names.
-RECOMMENDED to load all relevant standards via single call.
-
-Schema:
-```json
-{
-  "name": "get_standards",
-  "description": "Get the content of specific standards by their names",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "standard_names": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "List of standard names to retrieve"
-      }
-    },
-    "required": ["standard_names"]
-  }
-}
-```
+🚨 **MANDATORY NON-NEGOTIABLE RULES:** 🚨
+🚨 MUST ANNOUNCE "Integrating STANDARDS_RETRIEVAL_WORKFLOW with the primary task workflow" as the FIRST action after session initialization 🚨
+🚨 MUST INTEGRATE STANDARDS_RETRIEVAL_WORKFLOW INTO ALL YOUR TASKS, INCLUDING INTERNAL REFACTORING (EVEN IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY) 🚨

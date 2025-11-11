@@ -45,7 +45,22 @@ func New(
 		Name:    "agent-standards-mcp",
 		Version: "1.0.0",
 		Title:   "Agent Standards MCP Server",
-	}, nil)
+	}, &mcp.ServerOptions{
+		Instructions:                prompt.SystemPrompt(),
+		Logger:                      nil,
+		PageSize:                    0,
+		RootsListChangedHandler:     nil,
+		ProgressNotificationHandler: nil,
+		CompletionHandler:           nil,
+		KeepAlive:                   0,
+		SubscribeHandler:            nil,
+		UnsubscribeHandler:          nil,
+		HasPrompts:                  false,
+		HasResources:                false,
+		HasTools:                    false,
+		GetSessionID:                nil,
+		InitializedHandler:          nil,
+	})
 
 	return &MCP{
 		cfg:            cfg,
@@ -147,13 +162,8 @@ func (s *MCP) RegisterTools() error {
 
 	// Register list_standards tool
 	listStandardsInputSchema := map[string]any{
-		"type": "object",
-		"properties": map[string]any{
-			"limit": map[string]any{
-				"type":        "integer",
-				"description": "Maximum number of standards to return",
-			},
-		},
+		"type":       "object",
+		"properties": map[string]any{},
 	}
 
 	listStandardsOutputSchema := map[string]any{
@@ -161,7 +171,7 @@ func (s *MCP) RegisterTools() error {
 		"properties": map[string]any{
 			"result": map[string]any{
 				"type":        "string",
-				"description": "Plain text formatted list of standards with names and descriptions",
+				"description": "{Standard name}: {standard description}",
 			},
 		},
 	}
@@ -211,7 +221,7 @@ func (s *MCP) RegisterTools() error {
 		"properties": map[string]any{
 			"result": map[string]any{
 				"type":        "string",
-				"description": "Plain text formatted standards with names, descriptions, and content",
+				"description": "Standard content",
 			},
 		},
 	}

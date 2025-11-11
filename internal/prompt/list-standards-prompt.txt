@@ -1,14 +1,2 @@
-This tool helps you discover available standards by providing a list of all standard names
-and their descriptions.
-
-Parameters:
-- limit (optional): Integer - Maximum number of standards to return
-
-Use this when:
-- You want to explore what standards are available
-- You need to find standards related to a specific domain
-- You're looking for guidelines before requesting the full content
-
-The tool returns basic information about each standard to help you decide which ones
-to retrieve in full. Each result includes the standard identifier and a brief description
-from the frontmatter metadata.
+This tool helps you discover available standards by providing a list of all standard names and their descriptions. 
+Help you decide which ones to retrieve in full.
