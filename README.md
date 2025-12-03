@@ -17,6 +17,14 @@ This MCP server solves these problems:
 - You can explicitly specify to the agent when to load standards by writing this in the rules or commands
 - The rules catalog is centralized. There is no binding to the implementation of a specific agent/IDE - can be used with any LLM agent that supports MCP
 
+## Some helpful standards
+
+- **[Coding Rules](standards/coding-rules.md)** - General coding standards for consistent, high-quality software development including SOLID principles and software architecture guidelines
+- **[Golang Guidelines](standards/golang.md)** - Golang-specific coding guidelines and best practices, including critical interface usage rules
+- **[gRPC API Standards](standards/grpc-api.md)** - gRPC standards and best practices for message naming, service definitions, and API design
+- **[REST API Standards](standards/rest-api.md)** - REST API standards and best practices for endpoint naming, HTTP methods, and API design
+- **[TDD Rules](standards/tdd-rules.md)** - Standards for applying Test-Driven Development (TDD) with applicability algorithms and best practices
+
 ## Available Tools
 
 The server provides two tools:
