@@ -92,10 +92,3 @@ For adding new dependencies:
 **Brace fixing**
 - Read full block (function/method/scope) to understand structure when fixing brace errors
 - Creating temporary examples: always run single file, absolute path (e.g. `go run /tmp/test.go`)
-
-**Critical Requirements:**
-- ✅ `package main` declaration (once!)
-- ✅ `import "fmt"` before other code
-- ✅ Valid Go syntax
-- ❌ MUST NOT `go run -c`
-- ❌ MUST NOT duplicate package declarations
