@@ -17,6 +17,14 @@ This MCP server solves these problems:
 - You can explicitly specify to the agent when to load standards by writing this in the rules or commands
 - The rules catalog is centralized. There is no binding to the implementation of a specific agent/IDE - can be used with any LLM agent that supports MCP
 
+## Some helpful standards
+
+- **[Coding Rules](standards/coding-rules.md)** - General coding standards for consistent, high-quality software development including SOLID principles and software architecture guidelines
+- **[Golang Guidelines](standards/golang.md)** - Golang-specific coding guidelines and best practices, including critical interface usage rules
+- **[gRPC API Standards](standards/grpc-api.md)** - gRPC standards and best practices for message naming, service definitions, and API design
+- **[REST API Standards](standards/rest-api.md)** - REST API standards and best practices for endpoint naming, HTTP methods, and API design
+- **[TDD Rules](standards/tdd-rules.md)** - Standards for applying Test-Driven Development (TDD) with applicability algorithms and best practices
+
 ## Available Tools
 
 The server provides two tools:
@@ -80,7 +88,7 @@ After these steps, the executable will be permanently allowed to run on your sys
 ### Claude Code
 Add the MCP server using the CLI:
 ```bash
-claude mcp add -s user --transport stdio agent-standards /path/to/agent-standards-mcp
+claude mcp add -s user --transport stdio standards /path/to/agent-standards-mcp
 ```
 
 ### Cursor IDE, RooCode, KiloCode, etc.
@@ -88,66 +96,12 @@ Add to your Cursor settings:
 ```json
 {
   "mcpServers": {
-    "agent-standards": {
+    "standards": {
       "command": "/path/to/agent-standards-mcp"
     }
   }
 }
 ```
-
-### Configuration
-
-#### Set system prompt
-
-**Option 1: Manual inclusion (recommended)**
-
-Add to your workflow (subagents, commands, etc.) the following instruction to enforce the use of the standards retrieval workflow:
-
-OpenCode example:
-```markdown
-MUST use `agent-standards_list_standards` -> `agent-standards_get_standards` tools to get relevant standards for the project
-```
-
-Tool names can be varied depending on which agent you are using. Ask your agent for the correct tool names if unsure.
-
-**Option 2: Automatic inclusion (can be bypassed by the LLM)**
-
-Add to your AGENTS.md/CLAUDE.md/other agent rules file the following mandatory rules to enforce the use of the standards retrieval workflow:
-
-```markdown
-🚨🚨🚨 **FIRST MANDATED ACTION BEFORE ANY WORKSPACE EXPLORATION:** 🚨🚨🚨
-1. FOLLOW STANDARDS_RETRIEVAL_WORKFLOW
-2. MUST FOLLOW STANDARDS_RETRIEVAL_WORKFLOW EVEN:
-    * IF YOU ARE 100% SURE THAT IT IS NOT NECESSARY
-    * FOR SMALLEST TASKS, REGARDLESS OF PERCEIVED SIMPLICITY OR OBVIOUSNESS
-
-**HIERARCHICAL RULE ENFORCEMENT**
-🚨🚨🚨 CRITICAL RULE VIOLATION 🚨🚨🚨
-- FIRST MANDATED ACTION: STANDARDS_RETRIEVAL_WORKFLOW
-- CONSEQUENCE: Task failure, no responses allowed until workflow completed
-- VERIFICATION: Must explicitly state each completed step before proceeding
-
-**MANDATORY STANDARDS_RETRIEVAL_WORKFLOW:**
-1. MUST ANNOUNCE "🧠 Using standards retrieval workflow"
-2. Quickly explore workspace to understand project type
-3. Identify task type and scope
-4. Determine relevant standards categories (coding, workflows, business analysis, testing, architecture, etc.)
-5. Get list of available standards
-6. Select the most relevant standards for your task
-7. MUST announce in format:
-    ```
-    Relevant Standards for {task type}:
-    - {standard 1}: {why it's relevant. E.g., "Covers best practices for X"}
-    ...
-    ```
-8. Get selected standards content
-9. Apply retrieved standards to your task execution
-10. Continue your primary task workflow using the standards as guidance
-```
-
-* Some LLMs may need to modify the wording to better fit their understanding.
-* Why these rules are not included in the MCP server prompt? Because some agents (like RooCode/KiloCode) start trying to use tools `list_standards` and `get_standards` not like MCP tools, but as regular system tools, which leads to tool call errors.
-* Why to ask LLM to say something? This way we make the LLM take the first step in the right direction and not forget about it later. This significantly reduces the probability of ignoring the rules.
 
 #### Configure the server with environment variables (optional)
 

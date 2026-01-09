@@ -25,7 +25,7 @@ linters-settings:
   lll:
     line-length: 120
   goimports:
-    local-prefixes: github.com/n-r-w/asteria
+    local-prefixes: github.com/n-r-w/agent-standards-mcp
   nolintlint:
     require-explanation: true
     require-specific: true

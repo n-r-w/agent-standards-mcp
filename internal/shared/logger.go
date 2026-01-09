@@ -1,5 +1,5 @@
 // Package shared provides common interfaces for logging functionality.
-package shared
+package shared //nolint:revive,nolintlint // i like this name :)
 
 //go:generate mockgen -source=logger.go -destination=logger_mock.go -package=shared
 
