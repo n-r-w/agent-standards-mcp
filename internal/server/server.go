@@ -121,20 +121,29 @@ func formatStandardInfos(infos []domain.StandardInfo) string {
 	}
 
 	var builder strings.Builder
-
-	// add prefix
-	if len(infos) > 0 {
-		builder.WriteString(prompt.LoadRelevantStandardsPrompt() + "\n")
-	}
+	builder.WriteString(prompt.LoadRelevantStandardsPrompt())
+	builder.WriteByte('\n')
 
 	for i, info := range infos {
 		if i > 0 {
-			builder.WriteString("\n")
+			builder.WriteByte('\n')
 		}
 		builder.WriteString(formatStandardInfo(info))
 	}
 
 	return builder.String()
+}
+
+func listStandardsStructuredContent(infos []domain.StandardInfo) map[string]any {
+	standards := make([]any, len(infos))
+	for i, info := range infos {
+		standards[i] = map[string]any{
+			"name":        info.Name,
+			"description": info.Description,
+		}
+	}
+
+	return map[string]any{"standards": standards}
 }
 
 // formatStandards formats multiple Standard objects as plain text
@@ -169,11 +178,23 @@ func (s *MCP) RegisterTools() error {
 	listStandardsOutputSchema := map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"result": map[string]any{
-				"type":        "string",
-				"description": "{Standard name}: {standard description}",
+			"standards": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{
+							"type": "string",
+						},
+						"description": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []string{"name", "description"},
+				},
 			},
 		},
+		"required": []string{"standards"},
 	}
 
 	mcp.AddTool(s.server, &mcp.Tool{
@@ -185,20 +206,19 @@ func (s *MCP) RegisterTools() error {
 		Annotations:  nil,
 		Title:        "List Standards",
 	}, func(ctx context.Context, request *mcp.CallToolRequest, input map[string]any) (
-		*mcp.CallToolResult, map[string]string, error,
+		*mcp.CallToolResult, map[string]any, error,
 	) {
 		result, err := s.handleListStandards(ctx, request, input)
 		if err != nil {
 			return result, nil, err
 		}
-		// Extract text content from the result
-		var textResult string
-		if len(result.Content) > 0 {
-			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				textResult = textContent.Text
-			}
+		// Return structured content matching the contract: {"standards": [...]}
+		structuredOut, ok := result.StructuredContent.(map[string]any)
+		if !ok {
+			return nil, nil, fmt.Errorf(
+				"internal error: StructuredContent is %T, expected map[string]any", result.StructuredContent)
 		}
-		return result, map[string]string{"result": textResult}, nil
+		return result, structuredOut, nil
 	})
 
 	// Register get_standards tool
@@ -268,19 +288,19 @@ func (s *MCP) handleListStandards(ctx context.Context, _ *mcp.CallToolRequest, i
 			IsError:           true,
 			Meta:              mcp.Meta{},
 			Content:           []mcp.Content{&mcp.TextContent{Meta: mcp.Meta{}, Annotations: nil, Text: err.Error()}},
-			StructuredContent: err.Error(),
+			StructuredContent: nil,
 		}, err
 	}
 
 	formattedResult := formatStandardInfos(domainResult)
+	structuredContent := listStandardsStructuredContent(domainResult)
 
-	// Return formatted plain text result
 	s.auditLogger.LogClientResponse("mcp-client", formattedResult, nil)
 	return &mcp.CallToolResult{
 		IsError:           false,
 		Meta:              mcp.Meta{},
 		Content:           []mcp.Content{&mcp.TextContent{Meta: mcp.Meta{}, Annotations: nil, Text: formattedResult}},
-		StructuredContent: formattedResult,
+		StructuredContent: structuredContent,
 	}, nil
 }
 

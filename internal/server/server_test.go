@@ -145,6 +145,17 @@ func TestMCP_handleListStandards_Success(t *testing.T) {
 	require.True(t, ok)
 	expectedText := prompt.LoadRelevantStandardsPrompt() + "\ntest-standard-1: Test standard 1\ntest-standard-2: Test standard 2"
 	assert.Equal(t, expectedText, textContent.Text)
+
+	// Validate StructuredContent is a JSON object with expected contract
+	// Expected: {"standards": [{"name": "...", "description": "..."}, ...]}
+	require.NotNil(t, result.StructuredContent, "StructuredContent should not be nil")
+	structuredMap, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a JSON object (map[string]any), got %T", result.StructuredContent)
+	standardsAny, exists := structuredMap["standards"]
+	require.True(t, exists, "StructuredContent should have 'standards' field")
+	standardsArray, ok := standardsAny.([]any)
+	require.True(t, ok, "StructuredContent.standards should be an array, got %T", standardsAny)
+	require.Len(t, standardsArray, 2, "StructuredContent.standards should have 2 items")
 }
 
 func TestMCP_handleListStandards_EmptyResult(t *testing.T) {
@@ -185,6 +196,16 @@ func TestMCP_handleListStandards_EmptyResult(t *testing.T) {
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
 	assert.Equal(t, "No standards found.", textContent.Text)
+
+	// Check StructuredContent is {"standards": []}
+	require.NotNil(t, result.StructuredContent, "StructuredContent should not be nil for empty result")
+	structuredMap, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a map[string]any, got %T", result.StructuredContent)
+	standardsAny, exists := structuredMap["standards"]
+	require.True(t, exists, "StructuredContent should have 'standards' field")
+	standardsArray, ok := standardsAny.([]any)
+	require.True(t, ok, "StructuredContent.standards should be an array, got %T", standardsAny)
+	assert.Empty(t, standardsArray, "StructuredContent.standards should be empty for no standards")
 }
 
 func TestMCP_handleListStandards_StandardLoaderError(t *testing.T) {

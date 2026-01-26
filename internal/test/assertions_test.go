@@ -83,6 +83,58 @@ func AssertPlainTextInput(t *testing.T, result *mcp.CallToolResult) string {
 	return textContent.Text
 }
 
+// ListStandardsResponse represents the expected JSON structure for list_standards StructuredContent.
+// This is the contract: {"standards": [{"name": "...", "description": "..."}, ...]}
+type ListStandardsResponse struct {
+	Standards []StandardItem `json:"standards"`
+}
+
+// StandardItem represents a single standard in the list_standards response.
+type StandardItem struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// AssertListStandardsStructuredContent validates that StructuredContent is a JSON object
+// with "standards" array field where each item has "name" and "description" string fields.
+// This is the expected contract for list_standards tool.
+func AssertListStandardsStructuredContent(t *testing.T, result *mcp.CallToolResult) ListStandardsResponse {
+	require.NotNil(t, result.StructuredContent, "StructuredContent should not be nil")
+
+	// StructuredContent should be a map (JSON object), not a string
+	structuredMap, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a JSON object (map[string]any), got %T", result.StructuredContent)
+
+	// Should have "standards" field
+	standardsAny, exists := structuredMap["standards"]
+	require.True(t, exists, "StructuredContent should have 'standards' field")
+
+	// "standards" should be an array
+	standardsArray, ok := standardsAny.([]any)
+	require.True(t, ok, "StructuredContent.standards should be an array, got %T", standardsAny)
+
+	// Each item should have "name" and "description" as strings
+	var response ListStandardsResponse
+	for i, itemAny := range standardsArray {
+		itemMap, ok := itemAny.(map[string]any)
+		require.True(t, ok, "StructuredContent.standards[%d] should be an object, got %T", i, itemAny)
+
+		nameAny, hasName := itemMap["name"]
+		require.True(t, hasName, "StructuredContent.standards[%d] should have 'name' field", i)
+		nameStr, ok := nameAny.(string)
+		require.True(t, ok, "StructuredContent.standards[%d].name should be string, got %T", i, nameAny)
+
+		descAny, hasDesc := itemMap["description"]
+		require.True(t, hasDesc, "StructuredContent.standards[%d] should have 'description' field", i)
+		descStr, ok := descAny.(string)
+		require.True(t, ok, "StructuredContent.standards[%d].description should be string, got %T", i, descAny)
+
+		response.Standards = append(response.Standards, StandardItem{Name: nameStr, Description: descStr})
+	}
+
+	return response
+}
+
 // AssertStandardListContains validates that plain text contains a specific standard by name
 func AssertStandardListContains(t *testing.T, plainText string, standardName string) {
 	expectedPattern := standardName + ":"

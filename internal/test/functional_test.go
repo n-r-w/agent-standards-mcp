@@ -14,17 +14,22 @@ func TestListStandards_NoArgs(t *testing.T) {
 	// Test list_standards with no arguments
 	result := AssertToolCallSuccess(t, suite, "list_standards", map[string]any{})
 
-	// Verify the result structure
+	// Verify the result structure - plain text Content
 	plainText := AssertPlainTextInput(t, result)
 	AssertStandardListCount(t, plainText, 5)
 	AssertMultipleStandardsFormat(t, plainText)
 
-	// Verify all standards are present
+	// Verify all standards are present in plain text
 	AssertStandardListContains(t, plainText, "standard1")
 	AssertStandardListContains(t, plainText, "standard2")
 	AssertStandardListContains(t, plainText, "standard3")
 	AssertStandardListContains(t, plainText, "no-description")
 	AssertStandardListContains(t, plainText, "complex-standard")
+
+	// Validate StructuredContent JSON contract
+	// Expected: {"standards": [{"name": "...", "description": "..."}, ...]}
+	structuredResponse := AssertListStandardsStructuredContent(t, result)
+	require.Len(t, structuredResponse.Standards, 5, "StructuredContent should contain 5 standards")
 }
 
 // TestListStandards_EmptyStandardsDir tests list_standards when standards directory is empty
@@ -35,9 +40,13 @@ func TestListStandards_EmptyStandardsDir(t *testing.T) {
 	// Test list_standards with empty standards directory
 	result := AssertToolCallSuccess(t, suite, "list_standards", map[string]any{})
 
-	// Verify the result structure
+	// Verify the plain text result
 	plainText := AssertPlainTextInput(t, result)
 	require.Equal(t, "No standards found.", plainText, "Should return 'No standards found.' for empty directory")
+
+	// Verify the StructuredContent is {"standards": []}
+	response := AssertListStandardsStructuredContent(t, result)
+	require.Empty(t, response.Standards, "StructuredContent.standards should be empty for empty directory")
 }
 
 // TestGetStandards_SingleStandard tests getting a single standard
