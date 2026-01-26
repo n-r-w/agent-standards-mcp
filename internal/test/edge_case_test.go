@@ -1,9 +1,11 @@
 package test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/n-r-w/agent-standards-mcp/internal/prompt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,9 +19,9 @@ func TestGetStandards_NonExistentStandard(t *testing.T) {
 		"standard_names": []string{"nonexistent-standard"},
 	})
 
-	// Should return empty result for non-existent standard
+	// Should return empty result with new format (memory 21)
 	plainText := AssertPlainTextInput(t, result)
-	require.Equal(t, "No standards found.", plainText, "Should return 'No standards found.' for non-existent standard")
+	AssertGetStandardsContentEmpty(t, plainText)
 }
 
 // TestGetStandards_MixOfExistentAndNonExistent tests getting a mix of existent and non-existent standards
@@ -32,12 +34,19 @@ func TestGetStandards_MixOfExistentAndNonExistent(t *testing.T) {
 		"standard_names": []string{"standard1", "nonexistent1", "standard2", "nonexistent2"},
 	})
 
-	// Should return only the existent standards
+	// Should return only the existent standards (memory 21)
 	plainText := AssertPlainTextInput(t, result)
-	AssertStandardListContains(t, plainText, "standard1")
-	AssertStandardListContains(t, plainText, "standard2")
-	AssertStandardListCount(t, plainText, 2)
-	AssertMultipleStandardsFormat(t, plainText)
+	AssertGetStandardsContentHasHeader(t, plainText)
+	AssertGetStandardsContentHasInstructionLine(t, plainText)
+	AssertGetStandardsContentHasCount(t, plainText, 2)
+	AssertGetStandardsContentListsStandard(t, plainText, "standard1", "A test standard for basic functionality")
+	AssertGetStandardsContentListsStandard(t, plainText, "standard2", "Another test standard with different content")
+	AssertGetStandardsContentNoBody(t, plainText, "This is the content of standard1")
+	AssertGetStandardsContentNoBody(t, plainText, "Standard 2 content here.")
+
+	// StructuredContent should have 2 entries
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Len(t, response.Standards, 2)
 }
 
 // TestGetStandards_NoFrontmatter tests getting a standard with no frontmatter
@@ -50,11 +59,19 @@ func TestGetStandards_NoFrontmatter(t *testing.T) {
 		"standard_names": []string{"no-description"},
 	})
 
-	// Verify that standard with no frontmatter is handled correctly
+	// Verify that standard with no frontmatter is handled correctly (memory 21)
 	plainText := AssertPlainTextInput(t, result)
-	AssertStandardListContains(t, plainText, "no-description")
-	AssertStandardContainsDescription(t, plainText, "no-description", "")
-	AssertStandardContainsContent(t, plainText, "no-description", "This standard has no frontmatter description")
+	AssertGetStandardsContentHasHeader(t, plainText)
+	AssertGetStandardsContentHasInstructionLine(t, plainText)
+	AssertGetStandardsContentHasCount(t, plainText, 1)
+	// Empty description should render as "- no-description:" (no trailing space after colon)
+	AssertGetStandardsContentListsStandard(t, plainText, "no-description", "")
+	AssertGetStandardsContentNoBody(t, plainText, "This standard has no frontmatter description")
+
+	// StructuredContent should still contain the full body
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Len(t, response.Standards, 1)
+	require.Contains(t, response.Standards[0].Content, "This standard has no frontmatter description")
 }
 
 // TestGetStandards_EmptyStandardList tests calling get_standards with an empty standard list
@@ -67,9 +84,9 @@ func TestGetStandards_EmptyStandardList(t *testing.T) {
 		"standard_names": []string{},
 	})
 
-	// Should return empty result
+	// Should return empty result with new format (memory 21)
 	plainText := AssertPlainTextInput(t, result)
-	require.Equal(t, "No standards found.", plainText, "Should return 'No standards found.' for empty standard list")
+	AssertGetStandardsContentEmpty(t, plainText)
 }
 
 // TestListStandards_ComplexStandard tests that complex standards with formatting are handled correctly
@@ -98,12 +115,20 @@ func TestGetStandards_DuplicateStandardNames(t *testing.T) {
 		"standard_names": []string{"standard1", "standard1", "standard1"},
 	})
 
-	// Should return the standard for each occurrence
+	// Should return the standard for each occurrence (memory 21: duplicates preserved)
 	plainText := AssertPlainTextInput(t, result)
-	// Count occurrences of the standard name in markdown format
-	standardCount := requireCountOfSubstring(t, plainText, "## standard1:")
-	require.Equal(t, 3, standardCount, "Should return standard for each occurrence")
-	AssertMultipleStandardsFormat(t, plainText)
+	AssertGetStandardsContentHasHeader(t, plainText)
+	AssertGetStandardsContentHasInstructionLine(t, plainText)
+	AssertGetStandardsContentHasCount(t, plainText, 3)
+	// Count occurrences of the summary line in new format
+	standardCount := requireCountOfSubstring(t, plainText, "- standard1:")
+	require.Equal(t, 3, standardCount, "Should return summary line for each occurrence")
+	// No markdown code blocks in Content
+	AssertGetStandardsContentNoBody(t, plainText, "This is the content of standard1")
+
+	// StructuredContent should have 3 entries
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Len(t, response.Standards, 3, "StructuredContent should have 3 standard entries")
 }
 
 // TestGetStandards_ParameterValidationMissing tests that missing required parameter is caught
@@ -150,25 +175,102 @@ func TestGetStandards_ParameterValidationWrongType(t *testing.T) {
 
 // Helper function to count substring occurrences
 func requireCountOfSubstring(t *testing.T, text, substring string) int {
-	count := 0
-	start := 0
-	for {
-		index := requireIndexOfSubstring(text[start:], substring)
-		if index == -1 {
-			break
-		}
-		count++
-		start += index + len(substring)
-	}
-	return count
+	require.NotEmpty(t, substring, "substring must not be empty")
+	return strings.Count(text, substring)
 }
 
 // Helper function to find substring index
-func requireIndexOfSubstring(text, substring string) int {
-	for i := 0; i <= len(text)-len(substring); i++ {
-		if text[i:i+len(substring)] == substring {
-			return i
-		}
+// Tests for get_standards StructuredContent JSON contract validation
+
+func TestGetStandards_StructuredContent_Success(t *testing.T) {
+	suite := NewTestSuite(t, WithCustomStandardFiles(DefaultStandardFiles()))
+	defer suite.Cleanup()
+
+	// Test get_standards with multiple standards
+	result := AssertToolCallSuccess(t, suite, "get_standards", map[string]any{
+		"standard_names": []string{"standard1", "standard2"},
+	})
+
+	// Validate StructuredContent follows the JSON contract (unchanged)
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Len(t, response.Standards, 2, "Should return 2 standards")
+
+	// Verify first standard has all required fields populated
+	require.Equal(t, "standard1", response.Standards[0].Name)
+	require.NotEmpty(t, response.Standards[0].Description)
+	require.NotEmpty(t, response.Standards[0].Content)
+
+	// Verify second standard has all required fields populated
+	require.Equal(t, "standard2", response.Standards[1].Name)
+	require.NotEmpty(t, response.Standards[1].Description)
+	require.NotEmpty(t, response.Standards[1].Content)
+
+	// Plain text Content assertions per new contract (memory 21)
+	plainText := AssertPlainTextInput(t, result)
+	AssertGetStandardsContentHasHeader(t, plainText)
+	AssertGetStandardsContentListsStandard(t, plainText, "standard1", "A test standard for basic functionality")
+	AssertGetStandardsContentListsStandard(t, plainText, "standard2", "Another test standard with different content")
+	AssertGetStandardsContentNoBody(t, plainText, "This is the content of standard1")
+}
+
+func TestGetStandards_StructuredContent_Empty(t *testing.T) {
+	suite := NewTestSuite(t, WithCustomStandardFiles(DefaultStandardFiles()))
+	defer suite.Cleanup()
+
+	// Test get_standards with empty standard list
+	result := AssertToolCallSuccess(t, suite, "get_standards", map[string]any{
+		"standard_names": []string{},
+	})
+
+	// Validate StructuredContent is {"standards": []} for empty result
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Empty(t, response.Standards, "Empty result should have empty standards array")
+
+	// Plain text Content should return header + "No standards found." per memory 21 contract
+	plainText := AssertPlainTextInput(t, result)
+	expectedEmpty := prompt.FollowStandardsPrompt() + "\n\nNo standards found."
+	require.Equal(t, expectedEmpty, plainText)
+}
+
+func TestGetStandards_StructuredContent_MixOfExistentAndNonExistent(t *testing.T) {
+	suite := NewTestSuite(t, WithCustomStandardFiles(DefaultStandardFiles()))
+	defer suite.Cleanup()
+
+	// Test get_standards with a mix of existent and non-existent standards
+	result := AssertToolCallSuccess(t, suite, "get_standards", map[string]any{
+		"standard_names": []string{"standard1", "nonexistent1", "standard2", "nonexistent2"},
+	})
+
+	// Validate StructuredContent structure and length (only existent standards)
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.Len(t, response.Standards, 2, "Should return only 2 existent standards")
+
+	// Each item should have all required fields as strings
+	for i, std := range response.Standards {
+		require.NotEmpty(t, std.Name, "standards[%d].name should not be empty", i)
+		require.IsType(t, "", std.Description, "standards[%d].description should be string", i)
+		require.IsType(t, "", std.Content, "standards[%d].content should be string", i)
 	}
-	return -1
+}
+
+func TestGetStandards_StructuredContent_DuplicateNames(t *testing.T) {
+	suite := NewTestSuite(t, WithCustomStandardFiles(DefaultStandardFiles()))
+	defer suite.Cleanup()
+
+	// Test get_standards with duplicate standard names
+	result := AssertToolCallSuccess(t, suite, "get_standards", map[string]any{
+		"standard_names": []string{"standard1", "standard1", "standard1"},
+	})
+
+	// Validate StructuredContent structure (duplicates should be preserved)
+	response := AssertGetStandardsStructuredContent(t, result)
+	require.GreaterOrEqual(t, len(response.Standards), 2, "Duplicate names should result in multiple items")
+
+	// Each item should have all required fields with proper types
+	for i, std := range response.Standards {
+		require.NotEmpty(t, std.Name, "standards[%d].name should not be empty", i)
+		require.Equal(t, "standard1", std.Name, "All items should be standard1")
+		require.IsType(t, "", std.Description, "standards[%d].description should be string", i)
+		require.IsType(t, "", std.Content, "standards[%d].content should be string", i)
+	}
 }
