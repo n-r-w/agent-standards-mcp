@@ -30,10 +30,13 @@ func TestTransport_InMemory(t *testing.T) {
 		"standard_names": []string{"standard1"},
 	})
 
-	// Verify the result structure
+	// Verify the result structure using new contract assertions (memory 21)
 	plainText = AssertPlainTextInput(t, result)
-	AssertStandardListCount(t, plainText, 1)
-	AssertGetStandardsContainsContent(t, plainText, "standard1", "A test standard for basic functionality", "This is the content of standard1")
+	AssertGetStandardsContentHasHeader(t, plainText)
+	AssertGetStandardsContentHasInstructionLine(t, plainText)
+	AssertGetStandardsContentHasCount(t, plainText, 1)
+	AssertGetStandardsContentListsStandard(t, plainText, "standard1", "A test standard for basic functionality")
+	AssertGetStandardsContentNoBody(t, plainText, "This is the content of standard1")
 }
 
 // TestTransport_ConcurrentConnections tests multiple concurrent connections

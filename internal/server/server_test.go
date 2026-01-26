@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -287,8 +288,49 @@ func TestMCP_handleGetStandards_Success(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := prompt.FollowStandardsPrompt() + "\n\n## test-standard-1: Test standard 1\n```md\nContent 1\n```\n\n------\n\n## test-standard-2: Test standard 2\n```md\nContent 2\n```"
-	assert.Equal(t, expectedText, textContent.Text)
+
+	// NEW CONTRACT ASSERTIONS (memory 21): Content should be concise summary, no full bodies.
+	plainText := textContent.Text
+
+	// 1) Header
+	require.True(t, strings.HasPrefix(plainText, prompt.FollowStandardsPrompt()),
+		"Content should start with follow-standards header")
+
+	// 2) Instruction line
+	require.Contains(t, plainText, "You MUST follow the loaded standards.",
+		"Content should contain instruction line")
+
+	// 3) Count line
+	require.Contains(t, plainText, "Loaded standards: 2",
+		"Content should contain count line")
+
+	// 4) Summary list entries
+	require.Contains(t, plainText, "- test-standard-1: Test standard 1",
+		"Content should contain summary line for standard 1")
+	require.Contains(t, plainText, "- test-standard-2: Test standard 2",
+		"Content should contain summary line for standard 2")
+
+	// 5) Note about StructuredContent
+	require.Contains(t, plainText, "Note: Full standard bodies are provided in StructuredContent",
+		"Content should contain note about StructuredContent")
+
+	// 6) NO full standard bodies in Content
+	require.NotContains(t, plainText, "```md",
+		"Content should NOT contain markdown code blocks")
+	require.NotContains(t, plainText, "Content 1",
+		"Content should NOT contain standard body content")
+	require.NotContains(t, plainText, "Content 2",
+		"Content should NOT contain standard body content")
+
+	// 7) StructuredContent should still contain full bodies
+	require.NotNil(t, result.StructuredContent, "StructuredContent should be present")
+	structured, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a map")
+	standards, ok := structured["standards"].([]map[string]any)
+	require.True(t, ok, "StructuredContent.standards should be an array of maps")
+	require.Len(t, standards, 2, "Should have 2 standards in StructuredContent")
+	assert.Equal(t, "Content 1", standards[0]["content"])
+	assert.Equal(t, "Content 2", standards[1]["content"])
 }
 
 func TestMCP_handleGetStandards_EmptyResult(t *testing.T) {
@@ -330,7 +372,11 @@ func TestMCP_handleGetStandards_EmptyResult(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	assert.Equal(t, "No standards found.", textContent.Text)
+
+	// NEW CONTRACT ASSERTION (memory 21): Empty result should have header + "No standards found."
+	const expectedEmpty = "# MUST FOLLOW STANDARDS BELOW\n\nNo standards found."
+	assert.Equal(t, expectedEmpty, textContent.Text,
+		"Empty result should have header + 'No standards found.' per new contract")
 }
 
 // Tests for handleGetStandards input validation
@@ -364,6 +410,15 @@ func TestMCP_handleGetStandards_MissingStandardNamesParam(t *testing.T) {
 	require.Equal(t, expectedError, err)
 	require.NotNil(t, result)
 	require.True(t, result.IsError)
+
+	// Error contract: StructuredContent must be nil on error
+	require.Nil(t, result.StructuredContent, "StructuredContent must be nil on error")
+
+	// Error contract: Content must contain exactly one text item with the error message
+	require.Len(t, result.Content, 1, "Content must have exactly one item on error")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content[0] must be TextContent")
+	require.Equal(t, expectedError.Error(), textContent.Text, "Content text must match error message")
 }
 
 func TestMCP_handleGetStandards_StandardNamesNotArray(t *testing.T) {
@@ -397,6 +452,15 @@ func TestMCP_handleGetStandards_StandardNamesNotArray(t *testing.T) {
 	require.Equal(t, expectedError, err)
 	require.NotNil(t, result)
 	require.True(t, result.IsError)
+
+	// Error contract: StructuredContent must be nil on error
+	require.Nil(t, result.StructuredContent, "StructuredContent must be nil on error")
+
+	// Error contract: Content must contain exactly one text item with the error message
+	require.Len(t, result.Content, 1, "Content must have exactly one item on error")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content[0] must be TextContent")
+	require.Equal(t, expectedError.Error(), textContent.Text, "Content text must match error message")
 }
 
 func TestMCP_handleGetStandards_StandardNamesArrayWithNonStrings(t *testing.T) {
@@ -430,6 +494,15 @@ func TestMCP_handleGetStandards_StandardNamesArrayWithNonStrings(t *testing.T) {
 	require.Equal(t, expectedError, err)
 	require.NotNil(t, result)
 	require.True(t, result.IsError)
+
+	// Error contract: StructuredContent must be nil on error
+	require.Nil(t, result.StructuredContent, "StructuredContent must be nil on error")
+
+	// Error contract: Content must contain exactly one text item with the error message
+	require.Len(t, result.Content, 1, "Content must have exactly one item on error")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content[0] must be TextContent")
+	require.Equal(t, expectedError.Error(), textContent.Text, "Content text must match error message")
 }
 
 // Tests for handleGetStandards error scenarios
@@ -469,6 +542,15 @@ func TestMCP_handleGetStandards_StandardLoaderError(t *testing.T) {
 	require.Equal(t, expectedError, err)
 	require.NotNil(t, result)
 	require.True(t, result.IsError)
+
+	// Error contract: StructuredContent must be nil on error
+	require.Nil(t, result.StructuredContent, "StructuredContent must be nil on error")
+
+	// Error contract: Content must contain exactly one text item with the error message
+	require.Len(t, result.Content, 1, "Content must have exactly one item on error")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content[0] must be TextContent")
+	require.Equal(t, expectedError.Error(), textContent.Text, "Content text must match error message")
 }
 
 // Edge case tests
@@ -560,8 +642,28 @@ func TestMCP_handleGetStandards_LargeContent(t *testing.T) {
 	// Check that content is plain text
 	textContent, ok := result.Content[0].(*mcp.TextContent)
 	require.True(t, ok)
-	expectedText := prompt.FollowStandardsPrompt() + "\n\n## large-standard: Large standard\n```md\n" + largeContent + "\n```"
-	assert.Equal(t, expectedText, textContent.Text)
+	plainText := textContent.Text
+
+	// NEW CONTRACT ASSERTIONS (memory 21): Content should be concise summary, no large body.
+	require.True(t, strings.HasPrefix(plainText, prompt.FollowStandardsPrompt()),
+		"Content should start with follow-standards header")
+	require.Contains(t, plainText, "- large-standard: Large standard",
+		"Content should contain summary line for large-standard")
+	require.NotContains(t, plainText, "```md",
+		"Content should NOT contain markdown code blocks for large content")
+	// The largeContent is 10KB of zero bytes; it should NOT be in Content
+	require.NotContains(t, plainText, largeContent,
+		"Content should NOT contain the large body content")
+
+	// StructuredContent should still include the large body
+	require.NotNil(t, result.StructuredContent, "StructuredContent should be present")
+	structured, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a map")
+	standards, ok := structured["standards"].([]map[string]any)
+	require.True(t, ok, "StructuredContent.standards should be an array of maps")
+	require.Len(t, standards, 1, "Should have 1 standard in StructuredContent")
+	assert.Equal(t, largeContent, standards[0]["content"],
+		"StructuredContent should contain the full large content")
 }
 
 func TestServer_RegisterTools(t *testing.T) {

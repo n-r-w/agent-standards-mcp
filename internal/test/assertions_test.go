@@ -3,10 +3,12 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/n-r-w/agent-standards-mcp/internal/prompt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,6 +97,18 @@ type StandardItem struct {
 	Description string `json:"description"`
 }
 
+// GetStandardsItem represents a single standard item in get_standards StructuredContent response.
+type GetStandardsItem struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+}
+
+// GetStandardsResponse represents the get_standards StructuredContent response structure.
+type GetStandardsResponse struct {
+	Standards []GetStandardsItem `json:"standards"`
+}
+
 // AssertListStandardsStructuredContent validates that StructuredContent is a JSON object
 // with "standards" array field where each item has "name" and "description" string fields.
 // This is the expected contract for list_standards tool.
@@ -135,6 +149,58 @@ func AssertListStandardsStructuredContent(t *testing.T, result *mcp.CallToolResu
 	return response
 }
 
+// AssertGetStandardsStructuredContent validates the get_standards StructuredContent follows the JSON contract.
+// It asserts:
+// - StructuredContent is a map (JSON object)
+// - Has required field "standards" which is an array
+// - Each item has required string fields: "name", "description", "content"
+// Returns the parsed response for further assertions.
+func AssertGetStandardsStructuredContent(t *testing.T, result *mcp.CallToolResult) GetStandardsResponse {
+	require.NotNil(t, result.StructuredContent, "StructuredContent should not be nil")
+
+	// StructuredContent should be a map (JSON object), not a string
+	structuredMap, ok := result.StructuredContent.(map[string]any)
+	require.True(t, ok, "StructuredContent should be a JSON object (map[string]any), got %T", result.StructuredContent)
+
+	// Should have "standards" field
+	standardsAny, exists := structuredMap["standards"]
+	require.True(t, exists, "StructuredContent should have 'standards' field")
+
+	// "standards" should be an array
+	standardsArray, ok := standardsAny.([]any)
+	require.True(t, ok, "StructuredContent.standards should be an array, got %T", standardsAny)
+
+	// Each item should have "name", "description", and "content" as strings
+	var response GetStandardsResponse
+	for i, itemAny := range standardsArray {
+		itemMap, ok := itemAny.(map[string]any)
+		require.True(t, ok, "StructuredContent.standards[%d] should be an object, got %T", i, itemAny)
+
+		nameAny, hasName := itemMap["name"]
+		require.True(t, hasName, "StructuredContent.standards[%d] should have 'name' field", i)
+		nameStr, ok := nameAny.(string)
+		require.True(t, ok, "StructuredContent.standards[%d].name should be string, got %T", i, nameAny)
+
+		descAny, hasDesc := itemMap["description"]
+		require.True(t, hasDesc, "StructuredContent.standards[%d] should have 'description' field", i)
+		descStr, ok := descAny.(string)
+		require.True(t, ok, "StructuredContent.standards[%d].description should be string, got %T", i, descAny)
+
+		contentAny, hasContent := itemMap["content"]
+		require.True(t, hasContent, "StructuredContent.standards[%d] should have 'content' field", i)
+		contentStr, ok := contentAny.(string)
+		require.True(t, ok, "StructuredContent.standards[%d].content should be string, got %T", i, contentAny)
+
+		response.Standards = append(response.Standards, GetStandardsItem{
+			Name:        nameStr,
+			Description: descStr,
+			Content:     contentStr,
+		})
+	}
+
+	return response
+}
+
 // AssertStandardListContains validates that plain text contains a specific standard by name
 func AssertStandardListContains(t *testing.T, plainText string, standardName string) {
 	expectedPattern := standardName + ":"
@@ -145,38 +211,65 @@ func AssertStandardListContains(t *testing.T, plainText string, standardName str
 // AssertStandardListCount validates that plain text contains expected number of standards
 func AssertStandardListCount(t *testing.T, plainText string, expectedCount int) {
 	if expectedCount == 0 {
+		if strings.HasPrefix(plainText, prompt.FollowStandardsPrompt()) {
+			expectedEmpty := prompt.FollowStandardsPrompt() + "\n\nNo standards found."
+			require.Equal(t, expectedEmpty, plainText, "Empty result should return header + 'No standards found.'")
+			return
+		}
+
 		require.Equal(t, "No standards found.", plainText, "Empty result should return 'No standards found.'")
 		return
 	}
 
-	// Check if this is get_standards format (markdown) or list_standards format (plain text)
-	if strings.Contains(plainText, "## ") {
-		// get_standards format - count standard headers (lines that start with "## " and end with ":")
-		lines := strings.Split(plainText, "\n")
-		standardCount := 0
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			// Count lines that start with "## " and contain ":" (standard headers)
-			if strings.HasPrefix(line, "## ") && strings.Contains(line, ":") {
-				standardCount++
-			}
-		}
-		require.Equal(t, expectedCount, standardCount,
-			"Markdown text should contain exactly %d standards", expectedCount)
-	} else {
-		// list_standards format - count lines with standard name pattern
-		lines := strings.Split(plainText, "\n")
-		standardCount := 0
-		for _, line := range lines {
-			// Count non-empty lines with standard name pattern
-			line = strings.TrimSpace(line)
-			if line != "" && strings.Contains(line, ":") && !strings.HasPrefix(line, "#") {
-				standardCount++
-			}
-		}
-		require.Equal(t, expectedCount, standardCount,
-			"Plain text should contain exactly %d standards", expectedCount)
+	countFn := countListStandardsEntries
+	if strings.Contains(plainText, "Loaded standards:") {
+		countFn = countGetStandardsEntries
 	}
+
+	require.Equal(t, expectedCount, countFn(plainText),
+		"Plain text should contain exactly %d standards", expectedCount)
+}
+
+// countGetStandardsEntries counts standards in get_standards format (lines starting with "- " after "Loaded standards:").
+func countGetStandardsEntries(plainText string) int {
+	lines := strings.Split(plainText, "\n")
+	start := -1
+	for i, line := range lines {
+		if strings.HasPrefix(line, "Loaded standards:") {
+			start = i + 1
+			break
+		}
+	}
+	if start == -1 {
+		return 0
+	}
+
+	count := 0
+	for _, line := range lines[start:] {
+		if strings.HasPrefix(line, "Note:") {
+			break
+		}
+		if strings.HasPrefix(line, "- ") {
+			count++
+		}
+	}
+
+	return count
+}
+
+// countListStandardsEntries counts standards in list_standards format (lines with ":" not starting with "#").
+func countListStandardsEntries(plainText string) int {
+	lines := strings.Split(plainText, "\n")
+	count := 0
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && strings.Contains(line, ":") && !strings.HasPrefix(line, "#") {
+			count++
+		}
+	}
+
+	return count
 }
 
 // AssertStandardContainsDescription validates that a standard in plain text contains expected description
@@ -185,52 +278,6 @@ func AssertStandardContainsDescription(t *testing.T, plainText string, standardN
 	expectedPattern := standardName + ": " + expectedDescription
 	require.Contains(t, plainText, expectedPattern,
 		"Plain text should contain standard '%s' with description '%s'", standardName, expectedDescription)
-}
-
-// AssertStandardContainsContent validates that a standard in plain text contains expected content
-func AssertStandardContainsContent(t *testing.T, plainText string, standardName, expectedContent string) {
-	// For get_standards, look for markdown format: "## name: description"
-	standardHeader := "## " + standardName + ":"
-	standardStart := strings.Index(plainText, standardHeader)
-	require.GreaterOrEqual(t, standardStart, 0,
-		"Plain text should contain standard '%s' with markdown header", standardName)
-
-	// Look for content after the markdown header
-	afterHeader := plainText[standardStart:]
-	codeBlockStart := strings.Index(afterHeader, "```md\n")
-	require.GreaterOrEqual(t, codeBlockStart, 0, "Should find code block after standard header")
-
-	const codeBlockPrefixLength = 6 // len("```md\n")
-	contentStart := standardStart + codeBlockStart + codeBlockPrefixLength
-	if contentStart >= len(plainText) {
-		return
-	}
-
-	standardContent := plainText[contentStart:]
-
-	// Find end of code block
-	codeBlockEnd := strings.Index(standardContent, "\n```")
-	if codeBlockEnd >= 0 {
-		standardContent = standardContent[:codeBlockEnd]
-	}
-
-	require.Contains(t, standardContent, expectedContent,
-		"Standard '%s' should contain expected content", standardName)
-}
-
-// AssertGetStandardsContainsContent validates that get_standards result contains full content for a standard
-func AssertGetStandardsContainsContent(
-	t *testing.T,
-	plainText string,
-	standardName, expectedDescription, expectedContent string,
-) {
-	// For get_standards, check for markdown format
-	standardHeader := "## " + standardName + ": " + expectedDescription
-	require.Contains(t, plainText, standardHeader,
-		"Plain text should contain standard '%s' with markdown header and description", standardName)
-
-	// Check for content
-	AssertStandardContainsContent(t, plainText, standardName, expectedContent)
 }
 
 // AssertMultipleStandardsFormat validates that multiple standards are properly separated
@@ -266,6 +313,70 @@ func AssertMultipleStandardsFormat(t *testing.T, plainText string) {
 		require.Contains(t, plainText, "\n",
 			"Multiple standards should be separated by newlines")
 	}
+}
+
+// New assertions for get_standards Content summary format (memory 21 contract).
+// These assertions enforce the concise summary output (no full standard bodies in Content).
+
+// AssertGetStandardsContentHasHeader verifies Content starts with the follow-standards header.
+func AssertGetStandardsContentHasHeader(t *testing.T, plainText string) {
+	const expectedHeader = "# MUST FOLLOW STANDARDS BELOW"
+	require.True(t, strings.HasPrefix(plainText, expectedHeader),
+		"get_standards Content should start with header '%s', got: %q", expectedHeader, plainText[:min(len(plainText), 100)])
+}
+
+// AssertGetStandardsContentHasInstructionLine verifies Content contains the follow instruction.
+func AssertGetStandardsContentHasInstructionLine(t *testing.T, plainText string) {
+	require.Contains(t, plainText, "You MUST follow the loaded standards.",
+		"get_standards Content should contain instruction line")
+}
+
+// AssertGetStandardsContentHasCount verifies Content contains "Loaded standards: N" line.
+func AssertGetStandardsContentHasCount(t *testing.T, plainText string, expectedCount int) {
+	expectedLine := fmt.Sprintf("Loaded standards: %d", expectedCount)
+	require.Contains(t, plainText, expectedLine,
+		"get_standards Content should contain count line '%s'", expectedLine)
+}
+
+// AssertGetStandardsContentListsStandard verifies Content contains a summary line for the standard.
+// Format: "- name: description".
+func AssertGetStandardsContentListsStandard(t *testing.T, plainText, name, description string) {
+	var expectedLine string
+	if description == "" {
+		expectedLine = "- " + name + ":"
+	} else {
+		expectedLine = "- " + name + ": " + description
+	}
+	require.Contains(t, plainText, expectedLine,
+		"get_standards Content should contain summary line for standard '%s'", name)
+}
+
+// AssertGetStandardsContentNoBody verifies Content does NOT contain markdown code blocks
+// or known body content snippets. This enforces the new contract where full standard bodies
+// are only in StructuredContent, not in plain-text Content.
+func AssertGetStandardsContentNoBody(t *testing.T, plainText string, knownBodySnippet string) {
+	require.NotContains(t, plainText, "```md",
+		"get_standards Content should NOT contain markdown code blocks (full bodies belong in StructuredContent)")
+	require.NotContains(t, plainText, "```\n",
+		"get_standards Content should NOT contain code block endings (full bodies belong in StructuredContent)")
+	if knownBodySnippet != "" {
+		require.NotContains(t, plainText, knownBodySnippet,
+			"get_standards Content should NOT contain standard body content '%s'", knownBodySnippet)
+	}
+}
+
+// AssertGetStandardsContentEmpty verifies Content for empty result (N==0).
+// Format per memory 21: "# MUST FOLLOW STANDARDS BELOW\n\nNo standards found."
+func AssertGetStandardsContentEmpty(t *testing.T, plainText string) {
+	const expectedEmpty = "# MUST FOLLOW STANDARDS BELOW\n\nNo standards found."
+	require.Equal(t, expectedEmpty, plainText,
+		"get_standards Content for empty result should be exactly: %q", expectedEmpty)
+}
+
+// AssertGetStandardsContentNote verifies Content contains the note about StructuredContent.
+func AssertGetStandardsContentNote(t *testing.T, plainText string) {
+	require.Contains(t, plainText, "Note: Full standard bodies are provided in StructuredContent",
+		"get_standards Content should contain note about StructuredContent")
 }
 
 // getContext returns a background context for tool calls
